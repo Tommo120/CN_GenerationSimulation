@@ -7,6 +7,8 @@ const startTime = new Date().getTime() / 1000
 let currentTime = (new Date().getTime() / 1000) - startTime;
 let foodTime = currentTime + 5;
 
+let virusUnleashed = false;
+
 class vector2 {
     constructor(x, y) {
         this.x = x;
@@ -19,6 +21,8 @@ class object {
         this.position = position;
         this.scale = new vector2(width, 16);
         this.type = type;
+        this.infected = false;
+        this.dead = false;
         this.color = "white";
         this.updateType(type);
     }
@@ -28,24 +32,33 @@ class object {
         ctx.font = font;
         ctx.fillStyle = this.color;
         ctx.textAlign = "center";
-        ctx.fillText(this.type, this.position.x, this.position.y, this.width);
+        if(!this.dead)
+            ctx.fillText(this.type, this.position.x, this.position.y, this.width);
+        else
+            ctx.fillText("DEAD", this.position.x, this.position.y, this.width);
+
     }
 
     updateType(newType) {
         this.type = newType;
-        switch(newType) {
-            case "MAN":
-                this.color = "deepskyblue";
-                break;
-            case "WOMAN":
-                this.color = "hotpink";
-                break;
-            case "DEAD":
-                this.color = "grey";
-                break;
-            case "FOOD":
-                this.color = "red";
-                break;
+        if(!this.infected && !this.dead) {
+            switch(newType) {
+                case "MAN":
+                    this.color = "deepskyblue";
+                    break;
+                case "WOMAN":
+                    this.color = "hotpink";
+                    break;
+                case "FOOD":
+                    this.color = "red";
+                    break;
+                default:
+                    break;
+            }
+        } else if(this.infected) {
+            this.color = "green";
+        } else if(this.dead) {
+            this.color = "grey";
         }
     }
 
@@ -62,8 +75,7 @@ class human extends object {
         this.speed = 1;
         this.heading = 0;
         this.age = 0;
-        this.hunger = 25 + Math.floor(Math.random() * 75);
-        this.dead = false;
+        this.hunger = 25;
         this.canReproduce = false;
         this.reproduceTime = currentTime + 5;
 
@@ -73,6 +85,8 @@ class human extends object {
 
         this.ageOfDeath = 85 + Math.floor(Math.random() * 25);
         this.lastTick = 0;
+
+        this.decayAlpha = 255;
 
     }
     updatePosition() {
@@ -100,9 +114,21 @@ class human extends object {
                 }
             }
         }
-        if(this.isInfected) {
-            this.checkWomen;
-            this.checkOthers;
+        if(this.infected) {
+            for(let i = 0; i < men.length; i++) {
+                if(this.checkCollision(men[i]))
+                    men[i].setInfected();
+            }
+
+            for(let i = 0; i < women.length; i++) {
+                if(this.checkCollision(women[i]))
+                    women[i].setInfected();
+            }
+
+            for(let i = 0; i < children.length; i++) {
+                if(this.checkCollision(children[i]))
+                    children[i].setInfected();
+            }
         }
     }
 
@@ -153,21 +179,36 @@ class human extends object {
 
     tick() {
         this.lastTick = currentTime;
-        this.age++;
-        this.hunger--;
+        if(!this.infected) {
+            this.age++;
+            this.hunger--;
+        } else {
+            this.age += 2;
+            this.hunger -= 2;
+        }
     }
 
     die(cause) {
+        if(this.infected)
+            cause = "infection";
         console.log(`${this.type} - ${this.age} died of ${cause}`)
+        this.dead = true;
         this.velocity.x = this.velocity.y = 0;
-        this.updateType("DEAD");
+        this.updateType(this.type);
         this.canReproduce = false;
         this.width = 60;
-        this.dead = true;
+        limbo.push(this);
     }
 
     decay() {
+        this.lastTick = currentTime;
+        this.decayAlpha -= 10;
+        this.color = `rgba(128,128,128,${this.decayAlpha})`;
+    }
 
+    setInfected() {
+        this.infected = true;
+        this.color = "green";
     }
 
     update() {
@@ -205,7 +246,8 @@ class human extends object {
             this.checkCollisionList();
             this.edgeBounce();
         } else {
-            this.decay();
+            if(currentTime > this.lastTick && this.decayAlpha > 0)
+                this.decay();
         }
         this.draw();
     }
@@ -215,6 +257,8 @@ let men = [];
 let women = [];
 let children = [];
 let adults = [];
+let limbo = []
+let dead = [];
 let food = [];
 
 const randomPosition = () => {
@@ -236,9 +280,18 @@ const spawnNewFood = (count) => {
         food.push(new object(randomPosition(), 60, "FOOD"))
 }
 
+const infectSomeone = () => {
+    if(Math.random() > 0.5) {
+        let index = Math.floor(Math.random() * men.length);
+        men[index].setInfected();
+    } else {
+        let index = Math.floor(Math.random() * women.length);
+        women[index].setInfected();
+    }
+}
+
 const update = () => {
     ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight); //Clear the canvas ready for the next draw loop
-    //test.update();
     for(let i = 0; i < men.length; i++) {
         men[i].update();
     }
@@ -251,12 +304,29 @@ const update = () => {
         children[i].update();
     }
 
+    for(let i = 0; i < dead.length; i++) {
+        dead[i].update();
+    }
+
     if(adults.length > 0) {
         for(let i = 0; i < adults.length; i++) {
             let index = children.indexOf(adults[i]);
             children.splice(index, 1);
         }
         adults = [];
+    }
+
+    if(limbo.length > 0) {
+        console.log(limbo);
+        for(let i = 0; i < limbo.length; i++) {
+            if(limbo[i].type == "MAN") {
+                men.splice(men.indexOf(limbo[i]), 1);
+            } else if (limbo[i].type == "WOMAN") {
+                women.splice(women.indexOf(limbo[i]), 1);
+            }
+            dead.push(limbo[i]);
+        }
+        limbo = [];
     }
 
     for(let i = 0; i < food.length; i++) {
@@ -266,6 +336,12 @@ const update = () => {
     if(currentTime > foodTime && food.length < 15) {
         foodTime = currentTime + 5;
         spawnNewFood(5);
+    }
+
+    if(currentTime > 120 && !virusUnleashed) {
+        virusUnleashed = true;
+        infectSomeone();
+        console.log("A deadly virus has been unleashed!");
     }
 
     currentTime = Math.floor(((new Date().getTime() / 1000) - startTime));
