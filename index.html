@@ -7,8 +7,41 @@
     <title>Life</title>
 </head>
 <body>
-    <div class="canvas-container">
-        <canvas id="canvas" width='800' height='600'></canvas>
+    
+    <div class="main-container">
+        <div class="stats-container">
+            <div class="stats-population">
+                <h2>Current Population:</h2>
+                <h3 class="stat" id="count-women">Women: 0</h3>
+                <h3 class="stat" id="count-men">Men: 0</h3>
+                <h3 class="stat" id="count-children">Children: 0</h3>
+                <h3 class="stat" id="count-total">Total: 0</h3>
+                <hr>
+                <h3 class="stat" id="count-infected">Infected: 0</h3>
+            </div>
+            <div class="stats-peak">
+                <h2>Peak Population:</h2>
+                <h3 class="stat" id="peak-women">Women: 0</h3>
+                <h3 class="stat" id="peak-men">Men: 0</h3>
+                <h3 class="stat" id="peak-children">Children: 0</h3>
+                <h3 class="stat" id="peak-total">Total: 0</h3>
+                <h3 class="stat" id="peak-infected">Infected: 0</h3>
+
+            </div>
+            <div class="stats-other">
+                <h2>Other Statistics:</h2>
+                <h3 class="stat" id="count-deceased">Deceased: 0</h3>
+                <h3 class="stat" id="count-food">Food: 0</h3>
+            </div>
+            <h3></h3>
+        </div>
+        <div class="canvas-container">
+            <canvas id="canvas" width='800' height='600'></canvas>
+            <div class="event-container" id="event-container">
+                <h3 class="event-header">Event Log</h3>
+                <div id="placeholder"></div>
+            </div>
+        </div>
     </div>
     <script src="./js/main.js"></script>
 </body>

@@ -1,11 +1,40 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
+//const eventContainer = document.getElementByClassName("event-container");
+
+// Statistics Elements
+// Current pop.
+const statWomen = document.getElementById("count-women");
+const statMen = document.getElementById("count-men");
+const statChildren = document.getElementById("count-children");
+const statTotal = document.getElementById("count-total");
+const statInfected = document.getElementById("count-infected");
+const statDeceased = document.getElementById("count-deceased");
+const statFood = document.getElementById("count-food");
+
+// Peak pop.
+const peakWomen = document.getElementById("peak-women");
+const peakMen = document.getElementById("peak-men");
+const peakChildren = document.getElementById("peak-children");
+const peakTotal = document.getElementById("peak-total");
+const peakInfected = document.getElementById("peak-infected");
+
+let peakWomenInt = 0;
+let peakMenInt = 0;
+let peakChildrenInt = 0;
+let peakTotalInt = 0;
+let peakInfectedInt = 0;
+
+let deceasedCount = 0;
+let infectedCount = 0;
+
 const font = "16pt Comic Sans MS";
 
 const startTime = new Date().getTime() / 1000
 let currentTime = (new Date().getTime() / 1000) - startTime;
 let foodTime = currentTime + 5;
+let eventCount = 0;
 
 let virusUnleashed = false;
 
@@ -109,6 +138,7 @@ class human extends object {
                 if(this.checkCollision(women[i]) && women[i].canReproduce) {
                     children.push(new human(new vector2(this.position.x, this.position.y), 68, "CHILD"));
                     console.log("A CHILD was born")
+                    postEvent("A CHILD was born")
                     women[i].canReproduce = false;
                     women[i].reproduceTime = currentTime + 15;
                 }
@@ -191,7 +221,11 @@ class human extends object {
     die(cause) {
         if(this.infected)
             cause = "infection";
-        console.log(`${this.type} - ${this.age} died of ${cause}`)
+        console.log(`${this.type} - ${this.age} died of ${cause}`);
+        postEvent(`${this.type} - ${this.age} died of ${cause}`);
+        deceasedCount++;
+        if(this.infected)
+            infectedCount--;
         this.dead = true;
         this.velocity.x = this.velocity.y = 0;
         this.updateType(this.type);
@@ -207,8 +241,11 @@ class human extends object {
     }
 
     setInfected() {
-        this.infected = true;
-        this.color = "green";
+        if(!this.infected) {
+            this.infected = true;
+            this.color = "green";
+            infectedCount++;
+        }
     }
 
     update() {
@@ -280,6 +317,45 @@ const spawnNewFood = (count) => {
         food.push(new object(randomPosition(), 60, "FOOD"))
 }
 
+const updateStatistics = () => {
+    let totalPopulation = women.length + men.length + children.length;
+
+    //Current population
+    statWomen.innerText = `Women: ${women.length}`;
+    statMen.innerText = `Men: ${men.length}`;
+    statChildren.innerText = `Children: ${children.length}`;
+    statTotal.innerText = `Total: ${totalPopulation}`;
+    statDeceased.innerText = `Deceased: ${deceasedCount}`;
+    statInfected.innerText = `Infected: ${infectedCount}`;
+    statFood.innerText = `Food: ${food.length}`;
+
+    //Peak population
+    if(women.length > peakWomenInt) {
+        peakWomenInt = women.length;
+        peakWomen.innerText = `Women: ${peakWomenInt}`;
+    }
+
+    if(men.length > peakMenInt) {
+        peakMenInt = men.length;
+        peakMen.innerText = `Men: ${peakMenInt}`;
+    }
+
+    if(children.length > peakChildrenInt) {
+        peakChildrenInt = children.length;
+        peakChildren.innerText = `Children: ${peakChildrenInt}`;
+    }
+
+    if(totalPopulation > peakTotalInt) {
+        peakTotalInt = totalPopulation;
+        peakTotal.innerText = `Total: ${peakTotalInt}`;
+    }
+    
+    if(infectedCount > peakInfectedInt) {
+        peakInfectedInt = infectedCount;
+        peakInfected.innerText = `Infected: ${peakInfected}`;
+    }
+}
+
 const infectSomeone = () => {
     if(Math.random() > 0.5) {
         let index = Math.floor(Math.random() * men.length);
@@ -288,6 +364,18 @@ const infectSomeone = () => {
         let index = Math.floor(Math.random() * women.length);
         women[index].setInfected();
     }
+}
+
+const postEvent = (event) => {
+    let newDiv = document.createElement("div");
+    newDiv.className = "event";
+    newDiv.style = `display: flex; order: ${-eventCount};`
+    eventCount++;
+    let newContent = document.createTextNode(event);
+    newDiv.appendChild(newContent);
+    let currentDiv = document.getElementById("placeholder");
+    currentDiv.appendChild(newDiv);
+    //currentDiv.insertBefore(newDiv, eventContainer);
 }
 
 const update = () => {
@@ -317,7 +405,6 @@ const update = () => {
     }
 
     if(limbo.length > 0) {
-        console.log(limbo);
         for(let i = 0; i < limbo.length; i++) {
             if(limbo[i].type == "MAN") {
                 men.splice(men.indexOf(limbo[i]), 1);
@@ -343,6 +430,8 @@ const update = () => {
         infectSomeone();
         console.log("A deadly virus has been unleashed!");
     }
+
+    updateStatistics();
 
     currentTime = Math.floor(((new Date().getTime() / 1000) - startTime));
     //console.log(currentTime);

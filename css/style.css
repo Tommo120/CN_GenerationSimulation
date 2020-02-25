@@ -21,9 +21,77 @@ body {
     height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: center;
+    /* align-items: center; */
 }
 
 canvas {
     border: 1px dashed grey;
+}
+
+.event-container {
+    border: 1px dashed grey;
+    width: 256px;
+    height: 602px;
+    overflow: hidden;
+}
+
+.placeholder {
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.event {
+    color: white;
+    font-family: "Comic Sans MS";
+    padding: 0 10px;
+}
+
+.event-header {
+    text-align: center;
+    border-bottom: 1px dashed grey;
+    color: white;
+    font-family: "Comic Sans MS";
+    font-size: 16pt;
+    height: 34px;
+}
+
+.stats-container {
+    display: flex;
+    justify-content: space-around;
+    width: 100vw;
+    
+}
+
+.stat {
+    color: white;
+    font-family: "Comic Sans MS";
+}
+
+.main-container {
+    display: flex;
+    flex-direction: column;
+    justify-items: center;
+    align-items: center;
+    height: 600px;
+}
+
+.stats-population {
+    display: flex;
+    flex-direction: column;
+}
+
+.stats-peak {
+    display: flex;
+    flex-direction: column;
+}
+
+.stats-other {
+    display: flex;
+    flex-direction: column;
+}
+
+h2 {
+    color: white;
+    font-family: "Comic Sans MS";
+    text-decoration: underline;
 }
